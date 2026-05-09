@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "doc/requirements.md",
+    "doc/architecture.md",
+    "doc/database-design.md",
+    "doc/api-design.md"
+  ],
+  "formatter": {
+    "dotnet-format": {
+      "command": ["dotnet", "format", "--include", "$FILE"],
+      "extensions": [".cs", ".csproj"]
+    },
+    "dotnet-style": {
+      "command": ["dotnet", "format", "style", "--include", "$FILE"],
+      "extensions": [".cs"]
+    },
+    "prettier": {
+      "command": ["npx", "prettier", "--write", "$FILE"],
+      "extensions": [".ts", ".tsx", ".js", ".jsx", ".json", ".css", ".scss", ".vue", ".html"]
+    },
+    "vue-tsc": {
+      "command": ["npx", "vue-tsc", "--noEmit"],
+      "extensions": [".ts", ".vue"]
+    }
+  },
+  "permission": {
+    "edit": "allow",
+    "bash": "allow",
+    "webfetch": "allow"
+  }
+}
