@@ -1,0 +1,53 @@
+services:
+  openpeer-db:
+    image: postgres:16-alpine
+    container_name: openpeer-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: openpeer
+      POSTGRES_USER: openpeer
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devpassword}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openpeer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  openpeer-api:
+    build:
+      context: .
+      dockerfile: src/OpenPeer.Api/Dockerfile
+    container_name: openpeer-api
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__Default: "Host=openpeer-db;Database=openpeer;Username=openpeer;Password=${DB_PASSWORD:-devpassword}"
+      Jwt__Secret: ${JWT_SECRET:-change-me-in-production-min-256bit-secret}
+      Jwt__Issuer: "OpenPeer"
+      Jwt__Audience: "OpenPeer"
+      ASPNETCORE_ENVIRONMENT: "Development"
+    ports:
+      - "5000:8080"
+    volumes:
+      - uploads:/app/Uploads
+    depends_on:
+      openpeer-db:
+        condition: service_healthy
+
+  openpeer-web:
+    build:
+      context: .
+      dockerfile: src/OpenPeer.Web/Dockerfile
+    container_name: openpeer-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - openpeer-api
+
+volumes:
+  pgdata:
+  uploads:

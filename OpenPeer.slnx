@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OpenPeer.Api/OpenPeer.Api.csproj" />
+    <Project Path="src/OpenPeer.Application/OpenPeer.Application.csproj" />
+    <Project Path="src/OpenPeer.Domain/OpenPeer.Domain.csproj" />
+    <Project Path="src/OpenPeer.Infrastructure/OpenPeer.Infrastructure.csproj" />
+  </Folder>
+</Solution>

@@ -2,7 +2,7 @@
 
 ## Project status
 
-**Pre-implementation (M0).** Source code is not yet scaffolded. The `doc/` directory is the source of truth: `requirements.md`, `architecture.md`, `database-design.md`, `api-design.md`. First milestone (M1): scaffold backend/frontend projects, Docker Compose, database schema, and auth system per those docs.
+**M1 completed — project scaffolded, auth system running.** Backend (Clean Architecture .NET 10), frontend (Vue 3 SPA), PostgreSQL via Docker Compose. Registration/login/JWT all working. Next milestone (M2): paper CRUD, file upload, search.
 
 ## Project identity
 
@@ -12,7 +12,7 @@ OpenPeer is a reader-evaluation-driven academic paper platform. Authors publish 
 
 | Layer | Choice |
 |-------|--------|
-| Backend | ASP.NET Core 8 Web API (C# 12) |
+| Backend | ASP.NET Core 10 Web API (C# 13) |
 | Frontend | Vue 3 + Vite + TypeScript |
 | Database | PostgreSQL 16 |
 | ORM | EF Core 8 + Npgsql |
@@ -38,8 +38,6 @@ Api → Application → Domain ← Infrastructure
 
 ## Key commands
 
-> All commands require the project to be scaffolded first — no `.sln`, `.csproj`, or `package.json` exist yet.
-
 ```bash
 # Backend (run from solution root or Api project)
 dotnet restore
@@ -60,7 +58,7 @@ docker compose up -d --build   # start all services (db, api, web)
 docker compose down -v         # teardown with volumes
 ```
 
-Service ports: API `:5000`, Web `:80`, DB `:5432`, Swagger `http://localhost:5000/swagger`.
+Service ports: API `:5000`, Web `:80`, DB `:5432` (local dev) / `:5433` (Docker), API docs `http://localhost:5000/scalar/v1`.
 
 ## Important conventions
 

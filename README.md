@@ -13,7 +13,7 @@
 
 | 层级 | 技术 |
 |------|------|
-| 后端 | ASP.NET Core 8 Web API (C# 12) |
+| 后端 | ASP.NET Core 10 Web API (C# 13) |
 | 前端 | Vue 3 + Vite + TypeScript + Element Plus |
 | 数据库 | PostgreSQL 16 |
 | ORM | EF Core 8 + Npgsql |
@@ -39,29 +39,45 @@ Api → Application → Domain ← Infrastructure
 
 ## 项目状态
 
-**M0 — 预实施阶段。** 设计文档已完成，源代码尚未搭建。
+**M1 已完成** — 项目骨架已搭建，认证系统运行中。注册/登录/JWT 全部可工作。
 
-| 里程碑 | 目标 |
-|--------|------|
-| **M1** | 项目骨架、认证系统 |
-| **M2** | 论文 CRUD、文件上传、搜索 |
-| **M3** | 评分、评论系统 |
-| **M4** | 分类管理、个人中心 |
-| **M5** | 测试、优化、文档 |
+| 里程碑 | 目标 | 状态 |
+|--------|------|------|
+| **M1** | 项目骨架、认证系统 | ✅ 完成 |
+| **M2** | 论文 CRUD、文件上传、搜索 | 🚧 进行中 |
+| **M3** | 评分、评论系统 | 📋 待开发 |
+| **M4** | 分类管理、个人中心 | 📋 待开发 |
+| **M5** | 测试、优化、文档 | 📋 待开发 |
 
 ## 快速开始
 
-```bash
-# 搭建项目骨架
-/scaffold
+### Docker（推荐）
 
-# 启动所有服务
+```bash
+# 启动所有服务（自动运行数据库迁移）
 docker compose up -d --build
 
 # 访问
-# API:      http://localhost:5000
-# Swagger:  http://localhost:5000/swagger
-# Web:      http://localhost:80
+#    Web:    http://localhost
+#    API:    http://localhost:5000
+#    API 文档: http://localhost:5000/scalar/v1
+#    DB:     localhost:5433
+```
+
+### 本地开发
+
+```bash
+# 1. 启动 PostgreSQL（本地安装或仅 Docker 数据库）
+docker compose up -d openpeer-db
+
+# 2. 应用迁移
+dotnet ef database update -p src/OpenPeer.Infrastructure -s src/OpenPeer.Api
+
+# 3. 启动 API
+dotnet run --project src/OpenPeer.Api
+
+# 4. 启动前端 (新终端)
+cd src/OpenPeer.Web && npm run dev
 ```
 
 ## 项目结构

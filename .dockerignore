@@ -1,0 +1,21 @@
+# .NET
+src/**/bin/
+src/**/obj/
+*.user
+*.suo
+
+# Node
+src/OpenPeer.Web/node_modules/
+src/OpenPeer.Web/dist/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
