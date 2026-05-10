@@ -7,6 +7,8 @@ using OpenPeer.Application.Services;
 using OpenPeer.Domain.Entities;
 using OpenPeer.Infrastructure.Auth;
 using OpenPeer.Infrastructure.Data;
+using OpenPeer.Infrastructure.Repositories;
+using OpenPeer.Infrastructure.Storage;
 
 namespace OpenPeer.Infrastructure.Extensions;
 
@@ -30,6 +32,11 @@ public static class InfrastructureServiceExtensions
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddScoped<IPaperRepository, PaperRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IPaperService, PaperService>();
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         return services;
     }
