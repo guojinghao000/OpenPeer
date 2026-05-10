@@ -2,7 +2,7 @@
 
 ## Project status
 
-**M1 completed — project scaffolded, auth system running.** Backend (Clean Architecture .NET 10), frontend (Vue 3 SPA), PostgreSQL via Docker Compose. Registration/login/JWT all working. Next milestone (M2): paper CRUD, file upload, search.
+**M2 completed — paper CRUD, file upload, full-text search running.** Backend (Clean Architecture .NET 10), frontend (Vue 3 SPA), PostgreSQL via Docker Compose. Registration/login/JWT + paper upload/list/detail/search/delete all working. Next milestone (M3): rating + comment system.
 
 ## Project identity
 
@@ -83,6 +83,14 @@ Service ports: API `:5000`, Web `:80`, DB `:5432` (local dev) / `:5433` (Docker)
 ├── docker-compose.yml
 └── AGENTS.md
 ```
+
+## Session discipline
+
+Every development session must end with a documentation review:
+
+- **Update AGENTS.md** — sync project status, add newly discovered conventions or traps, remove stale claims. Every line should answer: "would a future agent make a mistake without reading this?" — if not, delete it.
+- **Update README.md** — keep it in sync with the actual project state: milestones, tech stack versions, port numbers, quick-start steps. It is the public face of the project.
+- **Update doc/ files** — if code changes deviate from design docs (`architecture.md`, `api-design.md`, `database-design.md`, `requirements.md`), update them. The `doc/` directory must remain the trusted single source of truth.
 
 ## Traps to avoid
 
