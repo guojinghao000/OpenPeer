@@ -34,24 +34,25 @@ Api → Application → Domain ← Infrastructure
 - **Application** — 服务、DTO、验证器、仓储接口
 - **Infrastructure** — DbContext、仓储实现、JWT、文件存储
 - **Api** — 控制器、中间件、依赖注入组装
-
+（推荐）
 前端位于 `src/OpenPeer.Web/`，标准 Vue 3 SPA。
 
 ## 项目状态
 
-**M1 已完成** — 项目骨架已搭建，认证系统运行中。注册/登录/JWT 全部可工作。
+**M2 已完成** — 论文 CRUD、PDF 上传、全文搜索运行中。注册/登录/JWT + 论文上传/列表/详情/搜索/删除全覆盖，前端首页/详情/上传/编辑页完整可用。管理后台含分类管理 + 用户管理。M3（评分+评论）即将开始。
 
 | 里程碑 | 目标 | 状态 |
 |--------|------|------|
 | **M1** | 项目骨架、认证系统 | ✅ 完成 |
-| **M2** | 论文 CRUD、文件上传、搜索 | 🚧 进行中 |
+| **M2** | 论文 CRUD、文件上传、搜索 | ✅ 完成 |
 | **M3** | 评分、评论系统 | 📋 待开发 |
 | **M4** | 分类管理、个人中心 | 📋 待开发 |
 | **M5** | 测试、优化、文档 | 📋 待开发 |
+| **M6** | 科研数据 + AI 论文生成 | 📋 待开发 |
 
 ## 快速开始
 
-### Docker（推荐）
+### Docker
 
 ```bash
 # 启动所有服务（自动运行数据库迁移）
@@ -87,8 +88,8 @@ OpenPeer/
 ├── doc/
 │   ├── requirements.md         # 需求文档（用户角色、功能、NFR）
 │   ├── architecture.md         # 架构设计（分层、路由、安全）
-│   ├── database-design.md      # 数据库设计（6 表、ER 图、索引）
-│   └── api-design.md           # API 设计（27 端点、请求/响应）
+│   ├── database-design.md      # 数据库设计（8 表、ER 图、索引）
+│   ├── api-design.md           # API 设计（35+ 端点、请求/响应）
 ├── src/
 │   ├── OpenPeer.Api/           # Web API 入口
 │   ├── OpenPeer.Application/   # 业务逻辑层

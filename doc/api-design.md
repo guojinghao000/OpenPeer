@@ -822,3 +822,209 @@ Authorization: Bearer <access_token> [Admin]
 | `500` | 服务器内部错误 |
 
 错误响应始终包含 `message` 字段，400 错误额外包含 `errors` 数组。
+
+---
+
+## 10. 科研数据模块 `/api/papers/{paperId}/data`
+
+### 10.1 上传支撑数据
+
+```
+POST /api/papers/{paperId}/data
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data
+```
+
+**请求 (multipart/form-data):**
+
+| 字段 | 类型 | 约束 |
+|------|------|------|
+| `file` | file | 必填, 图片(jpg/png/webp) / 文档(pdf/doc/docx) / 表格(csv/xlsx) / 数据(json/zip), ≤ 20MB |
+| `description` | string | 可选, 文件说明 |
+
+**成功 (201):**
+
+```json
+{
+  "code": 201,
+  "message": "支撑数据上传成功",
+  "data": {
+    "id": "sd-uuid-...",
+    "fileName": "experiment-results.csv",
+    "fileType": "text/csv",
+    "fileSize": 1024000,
+    "description": "实验原始数据",
+    "createdAt": "2026-05-10T10:00:00Z"
+  }
+}
+```
+
+### 10.2 获取支撑数据列表
+
+```
+GET /api/papers/{paperId}/data
+```
+
+**成功 (200):**
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": [
+    {
+      "id": "sd-uuid-...",
+      "fileName": "experiment-results.csv",
+      "fileType": "text/csv",
+      "fileSize": 1024000,
+      "description": "实验原始数据",
+      "userName": "alice",
+      "createdAt": "2026-05-10T10:00:00Z"
+    }
+  ]
+}
+```
+
+### 10.3 删除支撑数据
+
+```
+DELETE /api/papers/{paperId}/data/{id}
+Authorization: Bearer <access_token>
+```
+
+**成功 (204):** 无响应体
+
+**约束:** 仅上传者或论文作者可删除。
+
+### 10.4 下载支撑数据文件
+
+```
+GET /api/files/data/{fileName}
+```
+
+返回对应 MIME 类型的文件流。
+
+---
+
+## 11. AI 论文生成 `/api/papers`
+
+### 11.1 生成 LaTeX 论文
+
+```
+POST /api/papers/generate
+Authorization: Bearer <access_token>
+```
+
+**请求:**
+
+```json
+{
+  "title": "基于实验数据的时序预测研究",
+  "dataIds": ["sd-uuid-1", "sd-uuid-2"],
+  "prompt": "请根据提供的实验数据，撰写一篇学术论文，重点分析方法的有效性。"
+}
+```
+
+| 字段 | 约束 |
+|------|------|
+| `title` | 必填, 5~200 字符 |
+| `dataIds` | 必填, 至少选择 1 个文件 |
+| `prompt` | 必填, 1~2000 字符 |
+
+**成功 (201):**
+
+```json
+{
+  "code": 201,
+  "message": "LaTeX 论文生成成功",
+  "data": {
+    "paperId": "p1-uuid-...",
+    "latexUrl": "/api/papers/p1-uuid/latex",
+    "title": "基于实验数据的时序预测研究",
+    "createdAt": "2026-05-10T10:00:00Z"
+  }
+}
+```
+
+**可能错误:** 400 (未配置 AI API), 402 (AI API 调用失败), 413 (数据总量过大)
+
+### 11.2 获取 LaTeX 源码
+
+```
+GET /api/papers/{id}/latex
+Authorization: Bearer <access_token>
+```
+
+返回 `text/plain` 格式的 LaTeX 源码。
+
+---
+
+## 12. AI 配置模块 `/api/users/me/ai-config`
+
+### 12.1 查看 AI 配置
+
+```
+GET /api/users/me/ai-config
+Authorization: Bearer <access_token>
+```
+
+**成功 (200):**
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "hasApiKey": true
+  }
+}
+```
+
+> `hasApiKey` 为 `true` 表示已设置 API Key（不返回明文密钥）。
+
+### 12.2 更新 AI 配置
+
+```
+PUT /api/users/me/ai-config
+Authorization: Bearer <access_token>
+```
+
+**请求:**
+
+```json
+{
+  "provider": "openai",
+  "apiKey": "sk-xxx...",
+  "model": "gpt-4o"
+}
+```
+
+| 字段 | 约束 |
+|------|------|
+| `provider` | 必填, openai / deepseek / anthropic / custom |
+| `apiKey` | 必填, 加密存储 |
+| `model` | 必填, gpt-4o / deepseek-chat 等 |
+
+**成功 (200):**
+
+```json
+{
+  "code": 200,
+  "message": "AI 配置已更新"
+}
+```
+
+### 12.3 端点汇总 (新增)
+
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| `POST` | `/api/papers/{paperId}/data` | 是 | 上传支撑数据 |
+| `GET` | `/api/papers/{paperId}/data` | 否 | 支撑数据列表 |
+| `DELETE` | `/api/papers/{paperId}/data/{id}` | 是 | 删除支撑数据 |
+| `GET` | `/api/files/data/{fileName}` | 否 | 下载数据文件 |
+| `POST` | `/api/papers/generate` | 是 | 生成 LaTeX 论文 |
+| `GET` | `/api/papers/{id}/latex` | 是 | 获取 LaTeX 源码 |
+| `GET` | `/api/users/me/ai-config` | 是 | 查看 AI 配置 |
+| `PUT` | `/api/users/me/ai-config` | 是 | 更新 AI 配置 |

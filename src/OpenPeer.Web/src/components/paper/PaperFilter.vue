@@ -5,7 +5,7 @@
       placeholder="搜索论文..."
       clearable
       size="large"
-      @input="onSearch"
+      @change="onSearch"
       @clear="onSearch('')"
     >
       <template #prefix

@@ -33,6 +33,30 @@ const router = createRouter({
       component: () => import("../views/PaperDetailView.vue"),
     },
     {
+      path: "/papers/:id/edit",
+      name: "paperEdit",
+      component: () => import("../views/PaperEditView.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/admin",
+      name: "admin",
+      component: () => import("../views/admin/AdminLayout.vue"),
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        {
+          path: "categories",
+          name: "adminCategories",
+          component: () => import("../views/admin/CategoryManageView.vue"),
+        },
+        {
+          path: "users",
+          name: "adminUsers",
+          component: () => import("../views/admin/UserManageView.vue"),
+        },
+      ],
+    },
+    {
       path: "/profile",
       name: "profile",
       component: () => import("../views/ProfileView.vue"),
@@ -50,6 +74,8 @@ router.beforeEach((to, _from, next) => {
   const auth = useAuthStore();
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     next("/login");
+  } else if (to.meta.requiresAdmin && auth.user?.role !== "Admin") {
+    next("/");
   } else if (to.meta.guest && auth.isAuthenticated) {
     next("/");
   } else {

@@ -27,7 +27,9 @@
 | 参数校验 | FluentValidation | 11.x | 声明式校验规则 |
 | 对象映射 | Mapster | 7.x | 零反射高性能映射 |
 | 日志 | Serilog | 8.x | 结构化日志 |
-| API 文档 | Swashbuckle | 6.x | OpenAPI / Swagger UI |
+| API 文档 | Scalar | — | OpenAPI / API 参考文档 |
+| AI SDK | System.Text.Json + HttpClient | — | 调用 OpenAI/DeepSeek 兼容 API |
+| LaTeX 生成 | 自定义 Prompt 模板 | — | 引导 AI 生成 LaTeX 格式论文 |
 
 ### 2.2 前端
 
@@ -41,6 +43,7 @@
 | 路由 | Vue Router | 4.x | SPA 路由 |
 | HTTP 客户端 | Axios | 1.x | 请求封装与拦截 |
 | 样式 | SCSS + Element Plus 主题 | — | 可定制化 |
+| LaTeX 渲染 | MathJax / KaTeX | — | 浏览器端 LaTeX 预览 |
 
 ### 2.3 基础设施
 
@@ -115,7 +118,9 @@ src/
 │   │   ├── PaperService.cs
 │   │   ├── RatingService.cs
 │   │   ├── CommentService.cs
-│   │   └── UserService.cs
+│   │   ├── UserService.cs
+│   │   ├── DataService.cs
+│   │   └── AiPaperService.cs
 │   ├── DTOs/
 │   │   ├── Auth/
 │   │   │   ├── RegisterRequest.cs
@@ -144,7 +149,9 @@ src/
 │   │   ├── ICommentRepository.cs
 │   │   ├── IUserRepository.cs
 │   │   ├── ICategoryRepository.cs
-│   │   └── IFileStorageService.cs
+│   │   ├── IFileStorageService.cs
+│   │   ├── IDataService.cs
+│   │   └── IAiPaperService.cs
 │   └── Mappings/
 │       └── MapsterConfig.cs
 │
@@ -155,7 +162,9 @@ src/
 │   │   ├── Rating.cs
 │   │   ├── Comment.cs
 │   │   ├── Category.cs
-│   │   └── PaperCategory.cs
+│   │   ├── PaperCategory.cs
+│   │   ├── SupportingData.cs
+│   │   └── UserAiConfig.cs
 │   ├── Enums/
 │   │   ├── PaperStatus.cs
 │   │   └── UserRole.cs
@@ -169,8 +178,10 @@ src/
     │   │   ├── UserConfiguration.cs
     │   │   ├── PaperConfiguration.cs
     │   │   ├── RatingConfiguration.cs
-    │   │   ├── CommentConfiguration.cs
-    │   │   └── CategoryConfiguration.cs
+│   │   ├── CommentConfiguration.cs
+│   │   ├── CategoryConfiguration.cs
+│   │   ├── SupportingDataConfiguration.cs
+│   │   └── UserAiConfigConfiguration.cs
     │   └── Migrations/
     ├── Repositories/
     │   ├── PaperRepository.cs
@@ -183,6 +194,8 @@ src/
     │   └── JwtOptions.cs
     ├── Storage/
     │   └── LocalFileStorageService.cs
+    ├── AI/
+    │   └── AiApiClient.cs
     └── Extensions/
         └── InfrastructureServiceExtensions.cs
 ```
@@ -204,7 +217,9 @@ src/OpenPeer.Web/
 │   │   ├── papers.ts            # 论文相关 API
 │   │   ├── ratings.ts           # 评分相关 API
 │   │   ├── comments.ts          # 评论相关 API
-│   │   └── categories.ts        # 分类相关 API
+│   │   ├── categories.ts        # 分类相关 API
+│   │   ├── data.ts               # 支撑数据 API
+│   │   └── ai.ts                 # AI 配置 + 生成 API
 │   ├── assets/                  # 静态资源
 │   │   └── styles/
 │   │       ├── variables.scss   # SCSS 变量
@@ -237,7 +252,8 @@ src/OpenPeer.Web/
 │   ├── stores/                  # Pinia 状态管理
 │   │   ├── auth.ts
 │   │   ├── papers.ts
-│   │   └── ui.ts
+│   │   ├── ui.ts
+│   │   └── aiConfig.ts           # AI 配置状态
 │   ├── types/                   # TypeScript 类型定义
 │   │   ├── api.ts
 │   │   ├── paper.ts
@@ -275,6 +291,7 @@ src/OpenPeer.Web/
 | `/login` | LoginView | 否(仅未登录) | 登录页 |
 | `/register` | RegisterView | 否(仅未登录) | 注册页 |
 | `/profile` | ProfileView | 是 | 个人中心 |
+| `/profile/ai-config` | AiConfigView | 是 | AI 服务商配置 |
 | `/:pathMatch(.*)*` | NotFoundView | 否 | 404 页面 |
 
 ### 4.3 状态管理设计 (Pinia)
@@ -312,7 +329,7 @@ src/OpenPeer.Web/
                            │ proxy /api → :5000
                   ┌────────▼──────────┐
                   │   openpeer-api    │
-                  │   .NET 8 :5000    │
+                  │   .NET 10 :5000    │
                   │   Web API         │
                   └────────┬──────────┘
                            │
@@ -374,7 +391,7 @@ docker compose up -d
 
 # 访问
 # API:      http://localhost:5000
-# Swagger:  http://localhost:5000/swagger
+# Scalar:    http://localhost:5000/scalar/v1
 # Web:      http://localhost:80
 # 数据库:   localhost:5432
 ```
@@ -395,6 +412,7 @@ docker compose up -d
 | CORS | 白名单配置, 非开放通配符 |
 | 限流 | API 限流中间件 (登录 5/min, 上传 10/min) |
 | HTTPS | 生产环境强制 TLS |
+| AI Key 安全 | API Key 256 位 AES 加密存储，日志输出时脱敏 |
 
 ---
 

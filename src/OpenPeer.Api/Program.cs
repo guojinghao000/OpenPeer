@@ -56,6 +56,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+});
+
 builder.Services.AddFluentValidationAutoValidation()
     .AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
@@ -71,6 +76,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try { db.Database.Migrate(); }
     catch (Exception ex) { Log.Warning(ex, "Database migration skipped or failed"); }
+    await SeedData.InitializeAsync(scope.ServiceProvider);
 }
 
 if (app.Environment.IsDevelopment())

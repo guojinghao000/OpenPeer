@@ -53,6 +53,9 @@ public class PaperService : IPaperService
         dto.FileUrl = $"/api/files/papers/{Path.GetFileName(paper.FilePath)}";
         dto.CommentCount = paper.Comments.Count(c => !c.IsDeleted);
 
+        paper.ViewCount++;
+        _paperRepository.Update(paper);
+
         if (currentUserId.HasValue)
         {
             var userRating = paper.Ratings.FirstOrDefault(r => r.UserId == currentUserId.Value);

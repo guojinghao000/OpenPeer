@@ -31,4 +31,21 @@ public class CategoryRepository : ICategoryRepository
     {
         _context.Categories.Add(category);
     }
+
+    public void Update(Category category)
+    {
+        _context.Categories.Update(category);
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        var category = await _context.Categories.FindAsync(id);
+        if (category is not null)
+            _context.Categories.Remove(category);
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
 }

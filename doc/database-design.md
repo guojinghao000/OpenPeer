@@ -211,6 +211,48 @@ USING GIN (to_tsvector('english', "Title" || ' ' || "Abstract"));
 
 ---
 
+### 3.7 SupportingData (支撑数据)
+
+| 列名 | 类型 | 约束 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `Id` | `uuid` | PK | `gen_random_uuid()` | 文件唯一标识 |
+| `PaperId` | `uuid` | FK → Papers, NOT NULL | — | 所属论文 |
+| `UserId` | `uuid` | FK → Users, NOT NULL | — | 上传者 |
+| `FileName` | `varchar(256)` | NOT NULL | — | 原始文件名 |
+| `FilePath` | `varchar(500)` | NOT NULL | — | 存储相对路径 |
+| `FileType` | `varchar(50)` | NOT NULL | — | MIME 类型 |
+| `FileSize` | `bigint` | NOT NULL | — | 文件大小 (字节) |
+| `Description` | `varchar(500)` | NULL | — | 文件说明 |
+| `CreatedAt` | `timestamptz` | NOT NULL | `NOW()` | 上传时间 |
+
+**索引:**
+
+| 索引名 | 列 | 类型 |
+|--------|----|------|
+| `PK_SupportingData` | `Id` | PRIMARY KEY |
+| `IX_SupportingData_PaperId` | `PaperId` | INDEX |
+
+---
+
+### 3.8 UserAiConfig (用户 AI 配置)
+
+| 列名 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| `UserId` | `uuid` | PK, FK → Users | 用户 ID |
+| `Provider` | `varchar(50)` | NOT NULL | AI 服务商 (openai/deepseek/anthropic 等) |
+| `ApiKey` | `text` | NOT NULL | 加密存储的 API Key |
+| `Model` | `varchar(100)` | NOT NULL | 模型名称 (gpt-4o/deepseek-chat 等) |
+| `CreatedAt` | `timestamptz` | NOT NULL, `NOW()` | 创建时间 |
+| `UpdatedAt` | `timestamptz` | NULL | 更新时间 |
+
+**约束与索引:**
+
+| 名称 | 列 | 类型 |
+|------|----|------|
+| `PK_UserAiConfig` | `UserId` | PRIMARY KEY |
+
+---
+
 ## 4. EF Core 实体关系映射
 
 ```csharp
@@ -266,6 +308,27 @@ builder.Entity<Comment>()
     .WithMany(c => c.Replies)
     .HasForeignKey(c => c.ParentId)
     .OnDelete(DeleteBehavior.Restrict);
+
+// Paper → SupportingData
+builder.Entity<Paper>()
+    .HasMany(p => p.SupportingData)
+    .WithOne(sd => sd.Paper)
+    .HasForeignKey(sd => sd.PaperId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+// User → SupportingData
+builder.Entity<User>()
+    .HasMany(u => u.SupportingData)
+    .WithOne(sd => sd.User)
+    .HasForeignKey(sd => sd.UserId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+// User → UserAiConfig (一对一)
+builder.Entity<User>()
+    .HasOne(u => u.AiConfig)
+    .WithOne(ac => ac.User)
+    .HasForeignKey<UserAiConfig>(ac => ac.UserId)
+    .OnDelete(DeleteBehavior.Cascade);
 ```
 
 ---

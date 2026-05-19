@@ -105,6 +105,26 @@ public class PapersController : ControllerBase
         }
     }
 
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        try
+        {
+            var userId = GetUserId();
+            await _paperService.DeleteAsync(id, userId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse.Error(404, ex.Message));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
     [HttpPost("{id:guid}/retract")]
     [Authorize]
     public async Task<IActionResult> Retract(Guid id, [FromBody] RetractRequest request)

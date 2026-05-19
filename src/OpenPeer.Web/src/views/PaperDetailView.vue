@@ -17,7 +17,9 @@
       </div>
 
       <div class="actions" v-if="isAuthor">
-        <el-button @click="$router.push(`/papers/${paper.id}/edit`)"
+        <el-button
+          @click="$router.push(`/papers/${paper.id}/edit`)"
+          v-if="paper.status !== 'Retracted'"
           >编辑</el-button
         >
         <el-popconfirm title="确定删除这篇论文？" @confirm="handleDelete">
@@ -25,7 +27,36 @@
             ><el-button type="danger">删除</el-button></template
           >
         </el-popconfirm>
+        <el-popconfirm
+          title="确定撤回这篇论文？撤回后论文将不再公开可见。"
+          @confirm="showRetractDialog = true"
+          v-if="paper.status === 'Published'"
+        >
+          <template #reference
+            ><el-button type="warning">撤回</el-button></template
+          >
+        </el-popconfirm>
       </div>
+      <div v-if="paper.status === 'Retracted'" class="retracted-banner">
+        <el-alert
+          title="该论文已被作者撤回"
+          type="warning"
+          show-icon
+          :closable="false"
+        />
+      </div>
+
+      <el-dialog v-model="showRetractDialog" title="撤回论文">
+        <el-input
+          v-model="retractReason"
+          type="textarea"
+          placeholder="请输入撤回原因..."
+        />
+        <template #footer>
+          <el-button @click="showRetractDialog = false">取消</el-button>
+          <el-button type="primary" @click="handleRetract">确认撤回</el-button>
+        </template>
+      </el-dialog>
 
       <h3>摘要</h3>
       <p class="abstract">{{ paper.abstract }}</p>
@@ -63,6 +94,8 @@ const router = useRouter();
 const auth = useAuthStore();
 const paper = ref<PaperDetailDto | null>(null);
 const loading = ref(true);
+const showRetractDialog = ref(false);
+const retractReason = ref("");
 
 const isAuthor = computed(() =>
   paper.value && auth.user ? paper.value.author.id === auth.user.id : false,
@@ -92,6 +125,18 @@ async function handleDelete() {
     router.push("/");
   } catch (e: any) {
     ElMessage.error(e.response?.data?.message || "删除失败");
+  }
+}
+
+async function handleRetract() {
+  if (!paper.value) return;
+  try {
+    await papersApi.retract(paper.value.id, retractReason.value || "作者撤回");
+    ElMessage.success("论文已撤回");
+    paper.value.status = "Retracted";
+    showRetractDialog.value = false;
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "撤回失败");
   }
 }
 
@@ -137,6 +182,9 @@ onMounted(async () => {
   height: 600px;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+.retracted-banner {
+  margin-bottom: 20px;
 }
 .distribution {
   margin-top: 24px;

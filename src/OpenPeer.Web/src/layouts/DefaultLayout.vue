@@ -6,6 +6,11 @@
         <nav>
           <template v-if="auth.isAuthenticated">
             <router-link to="/upload">上传论文</router-link>
+            <router-link
+              v-if="auth.user?.role === 'Admin'"
+              to="/admin/categories"
+              >管理后台</router-link
+            >
             <router-link to="/profile">{{ auth.user?.userName }}</router-link>
             <a @click="handleLogout">退出</a>
           </template>

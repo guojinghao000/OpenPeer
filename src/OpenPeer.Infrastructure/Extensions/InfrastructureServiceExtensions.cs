@@ -32,6 +32,7 @@ public static class InfrastructureServiceExtensions
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
 
         services.AddScoped<IPaperRepository, PaperRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();

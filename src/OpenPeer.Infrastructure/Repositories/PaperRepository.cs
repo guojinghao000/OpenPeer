@@ -18,6 +18,7 @@ public class PaperRepository : IPaperRepository
     public async Task<(List<Paper> Items, int Total)> GetPagedListAsync(PaperListRequest request)
     {
         var query = _context.Papers
+            .Where(p => p.Status == OpenPeer.Domain.Enums.PaperStatus.Published)
             .Include(p => p.Author)
             .Include(p => p.PaperCategories)
                 .ThenInclude(pc => pc.Category)

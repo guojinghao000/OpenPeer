@@ -22,7 +22,7 @@ public class JwtService : IJwtService
     public Task<TokenResponse> GenerateTokensAsync(Guid userId, string userName, string role)
     {
         var accessToken = GenerateAccessToken(userId, userName, role);
-        var refreshToken = GenerateRefreshToken(userId);
+        var refreshToken = GenerateRefreshToken(userId, userName, role);
 
         var expiresIn = (int)TimeSpan.FromMinutes(_options.AccessTokenExpirationMinutes).TotalSeconds;
 
@@ -49,7 +49,7 @@ public class JwtService : IJwtService
         var response = new TokenResponse
         {
             AccessToken = GenerateAccessToken(entry.UserId, entry.UserName, entry.Role),
-            RefreshToken = GenerateRefreshToken(entry.UserId),
+            RefreshToken = GenerateRefreshToken(entry.UserId, entry.UserName, entry.Role),
             ExpiresIn = (int)TimeSpan.FromMinutes(_options.AccessTokenExpirationMinutes).TotalSeconds
         };
 
@@ -113,7 +113,7 @@ public class JwtService : IJwtService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private string GenerateRefreshToken(Guid userId)
+    private string GenerateRefreshToken(Guid userId, string userName, string role)
     {
         var randomBytes = new byte[64];
         using var rng = RandomNumberGenerator.Create();
@@ -125,8 +125,8 @@ public class JwtService : IJwtService
         {
             UserId = userId,
             ExpiresAt = DateTime.UtcNow.AddDays(_options.RefreshTokenExpirationDays),
-            UserName = string.Empty,
-            Role = string.Empty
+            UserName = userName,
+            Role = role
         };
 
         return refreshToken;
