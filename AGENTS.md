@@ -2,7 +2,7 @@
 
 ## Project status
 
-**M2 completed — paper CRUD, file upload, full-text search running.** Backend (Clean Architecture .NET 10), frontend (Vue 3 SPA), PostgreSQL via Docker Compose. Registration/login/JWT + paper upload/list/detail/search/delete all working. Next milestone (M3): rating + comment system.
+**M3 completed — rating + comment system.** M2 (paper CRUD, file upload, full-text search) already done. Registration/login/JWT + paper upload/list/detail/search/delete + **rating CRUD** (POST/GET/DELETE `/api/papers/{id}/ratings`) + **comment CRUD** (GET/POST `/api/papers/{id}/comments`, PUT/DELETE `/api/comments/{id}`) all working. Average score auto-recalculated in transaction after every rating write. Frontend: interactive StarRating component with v-model, inline comment/reply system. Next milestone (M4): profile polish, admin panel, sorting/filtering refinement.
 
 ## Project identity
 

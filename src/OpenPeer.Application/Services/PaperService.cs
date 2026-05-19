@@ -12,15 +12,18 @@ public class PaperService : IPaperService
     private readonly IPaperRepository _paperRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public PaperService(
         IPaperRepository paperRepository,
         ICategoryRepository categoryRepository,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        IUnitOfWork unitOfWork)
     {
         _paperRepository = paperRepository;
         _categoryRepository = categoryRepository;
         _fileStorageService = fileStorageService;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<PagedResponse<PaperDto>> GetListAsync(PaperListRequest request)
@@ -55,6 +58,7 @@ public class PaperService : IPaperService
 
         paper.ViewCount++;
         _paperRepository.Update(paper);
+        await _unitOfWork.SaveChangesAsync();
 
         if (currentUserId.HasValue)
         {
@@ -118,6 +122,7 @@ public class PaperService : IPaperService
         }
 
         _paperRepository.Add(paper);
+        await _unitOfWork.SaveChangesAsync();
 
         return paper.Adapt<PaperDto>();
     }
@@ -149,6 +154,7 @@ public class PaperService : IPaperService
         }
 
         _paperRepository.Update(paper);
+        await _unitOfWork.SaveChangesAsync();
 
         return paper.Adapt<PaperDto>();
     }
@@ -165,6 +171,7 @@ public class PaperService : IPaperService
         paper.IsDeleted = true;
         paper.UpdatedAt = DateTime.UtcNow;
         _paperRepository.Update(paper);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task RetractAsync(Guid id, string reason, Guid userId)
@@ -179,5 +186,6 @@ public class PaperService : IPaperService
         paper.Status = PaperStatus.Retracted;
         paper.UpdatedAt = DateTime.UtcNow;
         _paperRepository.Update(paper);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

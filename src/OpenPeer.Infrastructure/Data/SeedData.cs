@@ -26,6 +26,20 @@ public static class SeedData
             await userManager.CreateAsync(admin, "Admin1234");
         }
 
+        // Seed test reader user
+        if (await userManager.FindByEmailAsync("alice@example.com") is null)
+        {
+            var reader = new User
+            {
+                UserName = "alice",
+                Email = "alice@example.com",
+                Role = UserRole.Reader,
+                Bio = "计算机科学研究者，关注 AI 和数据科学领域",
+                CreatedAt = DateTime.UtcNow
+            };
+            await userManager.CreateAsync(reader, "Test1234");
+        }
+
         // Seed categories if empty
         if (!await context.Categories.AnyAsync())
         {
@@ -40,6 +54,62 @@ public static class SeedData
             };
 
             context.Categories.AddRange(categories);
+            await context.SaveChangesAsync();
+        }
+
+        // Seed sample papers if empty
+        if (!await context.Papers.AnyAsync())
+        {
+            var alice = await userManager.FindByEmailAsync("alice@example.com");
+            var categories = await context.Categories.ToListAsync();
+
+            var ai = categories.First(c => c.Name == "人工智能");
+            var ds = categories.First(c => c.Name == "数据科学");
+
+            var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Papers");
+            Directory.CreateDirectory(uploadDir);
+
+            // Find sample-paper.pdf relative to the solution root
+            var cwd = Directory.GetCurrentDirectory();
+            var sampleSource = Path.Combine(cwd, "sample-paper.pdf");
+            if (!File.Exists(sampleSource))
+                sampleSource = Path.Combine(cwd, "..", "sample-paper.pdf");
+            if (!File.Exists(sampleSource))
+                sampleSource = Path.Combine(cwd, "..", "..", "sample-paper.pdf");
+
+            var paperId = Guid.NewGuid();
+            var fileName = $"{paperId}.pdf";
+            var filePath = Path.Combine(uploadDir, fileName);
+
+            if (File.Exists(sampleSource))
+            {
+                File.Copy(sampleSource, filePath, overwrite: true);
+            }
+
+            var paper = new Paper
+            {
+                Id = paperId,
+                Title = "ImageNet Classification with Deep Convolutional Neural Networks",
+                Abstract = "We trained a large, deep convolutional neural network to classify the 1.2 million high-resolution images in the ImageNet LSVRC-2010 contest into the 1000 different classes. On the test data, we achieved top-1 and top-5 error rates of 37.5% and 17.0% which is considerably better than the previous state-of-the-art. The neural network, which has 60 million parameters and 650,000 neurons, consists of five convolutional layers, some of which are followed by max-pooling layers, and three fully-connected layers with a final 1000-way softmax. To make training faster, we used non-saturating neurons and a very efficient GPU implementation of the convolution operation. To reduce overfitting in the fully-connected layers we employed a recently-developed regularization method called \"dropout\" that proved to be very effective. We also entered a variant of this model in the ILSVRC-2012 competition and achieved a winning top-5 test error rate of 15.3%, compared to 26.2% achieved by the second-best entry.",
+                FilePath = filePath,
+                FileSize = 3682010L,
+                AuthorId = alice!.Id,
+                Status = PaperStatus.Published,
+                PublishedAt = DateTime.UtcNow.AddDays(-30)
+            };
+
+            paper.PaperCategories.Add(new PaperCategory
+            {
+                PaperId = paperId,
+                CategoryId = ai.Id
+            });
+            paper.PaperCategories.Add(new PaperCategory
+            {
+                PaperId = paperId,
+                CategoryId = ds.Id
+            });
+
+            context.Papers.Add(paper);
             await context.SaveChangesAsync();
         }
     }

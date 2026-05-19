@@ -1,6 +1,8 @@
 using Mapster;
 using OpenPeer.Application.DTOs.Auth;
+using OpenPeer.Application.DTOs.Comments;
 using OpenPeer.Application.DTOs.Papers;
+using OpenPeer.Application.DTOs.Ratings;
 using OpenPeer.Domain.Entities;
 
 namespace OpenPeer.Application.Mappings;
@@ -34,5 +36,11 @@ public static class MapsterConfig
             .Ignore(dest => dest.FileUrl)
             .Ignore(dest => dest.RatingDistribution)
             .Ignore(dest => dest.CurrentUserRating);
+
+        TypeAdapterConfig<Rating, RatingDto>.NewConfig()
+            .Map(dest => dest.User, src => src.User);
+
+        TypeAdapterConfig<Comment, CommentDto>.NewConfig()
+            .Map(dest => dest.User, src => src.User);
     }
 }

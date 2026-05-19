@@ -11,7 +11,7 @@
     </p>
     <div class="meta">
       <span class="author">{{ paper.author.userName }}</span>
-      <StarRating :rating="paper.averageRating" />
+      <StarRating :model-value="paper.averageRating" />
       <span>{{ paper.commentCount }} 评论</span>
       <span>{{ formatDate(paper.publishedAt) }}</span>
     </div>

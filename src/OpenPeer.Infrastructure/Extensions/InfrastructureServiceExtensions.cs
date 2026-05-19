@@ -36,7 +36,12 @@ public static class InfrastructureServiceExtensions
 
         services.AddScoped<IPaperRepository, PaperRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IRatingRepository, RatingRepository>();
+        services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IPaperService, PaperService>();
+        services.AddScoped<IRatingService, RatingService>();
+        services.AddScoped<ICommentService, CommentService>();
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         return services;

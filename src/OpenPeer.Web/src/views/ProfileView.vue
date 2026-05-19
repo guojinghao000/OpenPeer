@@ -76,12 +76,16 @@
 
         <el-tab-pane label="我的评分" name="ratings">
           <AppEmpty v-if="!profile.ratingCount" description="还没有评分" />
-          <span v-else>共 {{ profile.ratingCount }} 条评分（M3 开放）</span>
+          <span v-else
+            >共 {{ profile.ratingCount }} 条评分（详情页可查看）</span
+          >
         </el-tab-pane>
 
         <el-tab-pane label="我的评论" name="comments">
           <AppEmpty v-if="!profile.commentCount" description="还没有评论" />
-          <span v-else>共 {{ profile.commentCount }} 条评论（M3 开放）</span>
+          <span v-else
+            >共 {{ profile.commentCount }} 条评论（详情页可查看）</span
+          >
         </el-tab-pane>
       </el-tabs>
     </template>
