@@ -8,4 +8,5 @@ public class PaperListRequest
     public string Order { get; set; } = "desc";
     public Guid? CategoryId { get; set; }
     public string? Keyword { get; set; }
+    public Guid? AuthorId { get; set; }
 }

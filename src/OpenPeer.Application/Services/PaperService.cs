@@ -91,7 +91,7 @@ public class PaperService : IPaperService
             throw new InvalidOperationException("文件不能为空");
 
         var paperId = Guid.NewGuid();
-        var savedPath = await _fileStorageService.SaveFileAsync(fileStream, $"{paperId}.pdf");
+        var savedPath = await _fileStorageService.SaveFileAsync(fileStream, $"{paperId}.pdf", "Papers");
 
         var paper = new Paper
         {

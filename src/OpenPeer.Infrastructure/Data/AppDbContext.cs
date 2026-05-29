@@ -14,6 +14,8 @@ public class AppDbContext : IdentityDbContext<User, Microsoft.AspNetCore.Identit
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<PaperCategory> PaperCategories => Set<PaperCategory>();
+    public DbSet<SupportingData> SupportingData => Set<SupportingData>();
+    public DbSet<UserAiConfig> UserAiConfigs => Set<UserAiConfig>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

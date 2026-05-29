@@ -43,6 +43,7 @@ export interface PaperListParams {
   order?: string;
   categoryId?: string;
   keyword?: string;
+  authorId?: string;
 }
 
 export interface CategoryDto {

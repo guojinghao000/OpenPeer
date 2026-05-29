@@ -85,14 +85,20 @@ public static class SeedData
             {
                 File.Copy(sampleSource, filePath, overwrite: true);
             }
+            else
+            {
+                // Generate a minimal valid PDF if no sample file exists
+                GenerateMinimalPdf(filePath);
+            }
 
+            var fileInfo = new FileInfo(filePath);
             var paper = new Paper
             {
                 Id = paperId,
                 Title = "ImageNet Classification with Deep Convolutional Neural Networks",
                 Abstract = "We trained a large, deep convolutional neural network to classify the 1.2 million high-resolution images in the ImageNet LSVRC-2010 contest into the 1000 different classes. On the test data, we achieved top-1 and top-5 error rates of 37.5% and 17.0% which is considerably better than the previous state-of-the-art. The neural network, which has 60 million parameters and 650,000 neurons, consists of five convolutional layers, some of which are followed by max-pooling layers, and three fully-connected layers with a final 1000-way softmax. To make training faster, we used non-saturating neurons and a very efficient GPU implementation of the convolution operation. To reduce overfitting in the fully-connected layers we employed a recently-developed regularization method called \"dropout\" that proved to be very effective. We also entered a variant of this model in the ILSVRC-2012 competition and achieved a winning top-5 test error rate of 15.3%, compared to 26.2% achieved by the second-best entry.",
                 FilePath = filePath,
-                FileSize = 3682010L,
+                FileSize = fileInfo.Exists ? fileInfo.Length : 0,
                 AuthorId = alice!.Id,
                 Status = PaperStatus.Published,
                 PublishedAt = DateTime.UtcNow.AddDays(-30)
@@ -112,5 +118,76 @@ public static class SeedData
             context.Papers.Add(paper);
             await context.SaveChangesAsync();
         }
+
+        // Repair missing PDF files for existing papers (runs every startup)
+        var repairDir = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Papers");
+        Directory.CreateDirectory(repairDir);
+
+        var existingPapers = await context.Papers
+            .Where(p => !string.IsNullOrEmpty(p.FilePath))
+            .ToListAsync();
+
+        var sampleFile = Path.Combine(Directory.GetCurrentDirectory(), "sample-paper.pdf");
+        var hasSampleFile = File.Exists(sampleFile);
+
+        foreach (var p in existingPapers)
+        {
+            if (hasSampleFile)
+            {
+                var dir = Path.GetDirectoryName(p.FilePath)!;
+                Directory.CreateDirectory(dir);
+                File.Copy(sampleFile, p.FilePath, overwrite: true);
+            }
+            else if (!File.Exists(p.FilePath))
+            {
+                GenerateMinimalPdf(p.FilePath);
+            }
+        }
+    }
+
+    private static void GenerateMinimalPdf(string filePath)
+    {
+        // Minimal valid PDF that displays "OpenPeer — Sample PDF"
+        var content = @"%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]
+   /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 146 >>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(OpenPeer - Sample PDF) Tj
+/F1 14 Tf
+50 650 Td
+(This is a placeholder file. Upload your own PDF to replace it.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000266 00000 n 
+0000000465 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+529
+%%EOF";
+        File.WriteAllText(filePath, content);
     }
 }

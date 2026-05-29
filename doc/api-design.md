@@ -806,6 +806,13 @@ Authorization: Bearer <access_token> [Admin]
 | `POST` | `/api/categories` | 是 (Admin) | 创建分类 |
 | `PUT` | `/api/categories/{id}` | 是 (Admin) | 更新分类 |
 | `DELETE` | `/api/categories/{id}` | 是 (Admin) | 删除分类 |
+| `POST` | `/api/papers/{paperId}/data` | 是 | 上传支撑数据 |
+| `GET` | `/api/papers/{paperId}/data` | 否 | 支撑数据列表 |
+| `DELETE` | `/api/papers/{paperId}/data/{id}` | 是 | 删除支撑数据 |
+| `GET` | `/api/files/data/{fileName}` | 否 | 下载数据文件 |
+| `POST` | `/api/papers/generate` | 是 | 生成 LaTeX 论文 |
+| `GET` | `/api/users/me/ai-config` | 是 | 查看 AI 配置 |
+| `PUT` | `/api/users/me/ai-config` | 是 | 更新 AI 配置 |
 
 ---
 
@@ -931,31 +938,23 @@ Authorization: Bearer <access_token>
 | `dataIds` | 必填, 至少选择 1 个文件 |
 | `prompt` | 必填, 1~2000 字符 |
 
-**成功 (201):**
+**成功 (200):**
 
 ```json
 {
-  "code": 201,
+  "code": 200,
   "message": "LaTeX 论文生成成功",
   "data": {
-    "paperId": "p1-uuid-...",
-    "latexUrl": "/api/papers/p1-uuid/latex",
-    "title": "基于实验数据的时序预测研究",
-    "createdAt": "2026-05-10T10:00:00Z"
+    "latex": "\\documentclass[12pt,a4paper]{article}\n\\usepackage[utf8]{inputenc}\n..."
   }
 }
 ```
 
-**可能错误:** 400 (未配置 AI API), 402 (AI API 调用失败), 413 (数据总量过大)
+**可能错误:** 400 (未配置 AI API, 参数校验失败), 402 (AI API 调用失败), 413 (数据总量过大)
 
-### 11.2 获取 LaTeX 源码
+### 11.2 获取 LaTeX 源码 (未实现)
 
-```
-GET /api/papers/{id}/latex
-Authorization: Bearer <access_token>
-```
-
-返回 `text/plain` 格式的 LaTeX 源码。
+设计预留端点 `GET /api/papers/{id}/latex` 用于获取已保存到论文的 LaTeX 源码。当前 LaTeX 源码直接通过生成响应返回，不持久化保存。
 
 ---
 
@@ -1016,7 +1015,7 @@ Authorization: Bearer <access_token>
 }
 ```
 
-### 12.3 端点汇总 (新增)
+### 12.3 端点汇总
 
 | 方法 | 路径 | 认证 | 说明 |
 |------|------|------|------|
@@ -1025,6 +1024,5 @@ Authorization: Bearer <access_token>
 | `DELETE` | `/api/papers/{paperId}/data/{id}` | 是 | 删除支撑数据 |
 | `GET` | `/api/files/data/{fileName}` | 否 | 下载数据文件 |
 | `POST` | `/api/papers/generate` | 是 | 生成 LaTeX 论文 |
-| `GET` | `/api/papers/{id}/latex` | 是 | 获取 LaTeX 源码 |
 | `GET` | `/api/users/me/ai-config` | 是 | 查看 AI 配置 |
 | `PUT` | `/api/users/me/ai-config` | 是 | 更新 AI 配置 |

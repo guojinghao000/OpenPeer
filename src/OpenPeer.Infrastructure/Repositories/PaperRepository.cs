@@ -25,6 +25,11 @@ public class PaperRepository : IPaperRepository
             .Include(p => p.Comments)
             .AsNoTracking();
 
+        if (request.AuthorId.HasValue)
+        {
+            query = query.Where(p => p.AuthorId == request.AuthorId.Value);
+        }
+
         if (request.CategoryId.HasValue)
         {
             query = query.Where(p => p.PaperCategories.Any(pc => pc.CategoryId == request.CategoryId.Value));
@@ -50,6 +55,37 @@ public class PaperRepository : IPaperRepository
             _ => request.Order == "asc"
                 ? query.OrderBy(p => p.PublishedAt)
                 : query.OrderByDescending(p => p.PublishedAt)
+        };
+
+        var items = await query
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    public async Task<(List<Paper> Items, int Total)> GetPagedByAuthorIdAsync(Guid authorId, PaperListRequest request)
+    {
+        var query = _context.Papers
+            .Where(p => p.AuthorId == authorId && !p.IsDeleted)
+            .Include(p => p.Author)
+            .Include(p => p.PaperCategories)
+                .ThenInclude(pc => pc.Category)
+            .Include(p => p.Comments)
+            .AsNoTracking();
+
+        var total = await query.CountAsync();
+
+        query = request.SortBy switch
+        {
+            "averageRating" => request.Order == "asc"
+                ? query.OrderBy(p => p.AverageRating)
+                : query.OrderByDescending(p => p.AverageRating),
+            "publishedAt" => request.Order == "asc"
+                ? query.OrderBy(p => p.PublishedAt)
+                : query.OrderByDescending(p => p.PublishedAt),
+            _ => query.OrderByDescending(p => p.PublishedAt)
         };
 
         var items = await query

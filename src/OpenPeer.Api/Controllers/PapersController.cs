@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OpenPeer.Application.DTOs.AiConfig;
 using OpenPeer.Application.DTOs.Common;
 using OpenPeer.Application.DTOs.Papers;
 using OpenPeer.Application.Interfaces;
@@ -12,10 +14,12 @@ namespace OpenPeer.Api.Controllers;
 public class PapersController : ControllerBase
 {
     private readonly IPaperService _paperService;
+    private readonly IAiPaperService _aiPaperService;
 
-    public PapersController(IPaperService paperService)
+    public PapersController(IPaperService paperService, IAiPaperService aiPaperService)
     {
         _paperService = paperService;
+        _aiPaperService = aiPaperService;
     }
 
     [HttpGet]
@@ -42,7 +46,8 @@ public class PapersController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    [RequestSizeLimit(10 * 1024 * 1024)]
+    [EnableRateLimiting("Upload")]
+    [DisableRequestSizeLimit]
     public async Task<IActionResult> Upload(
         [FromForm] string title,
         [FromForm] string @abstract,
@@ -142,6 +147,22 @@ public class PapersController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+    }
+
+    [HttpPost("generate")]
+    [Authorize]
+    public async Task<IActionResult> GenerateLatex([FromBody] GenerateLatexRequest request)
+    {
+        try
+        {
+            var userId = GetUserId();
+            var latex = await _aiPaperService.GenerateLatexAsync(userId, request.Title, request.DataIds, request.Prompt);
+            return Ok(ApiResponse<object>.Success(new { latex }, "LaTeX 论文生成成功"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse.Error(400, ex.Message));
         }
     }
 

@@ -16,7 +16,7 @@
 | 后端 | ASP.NET Core 10 Web API (C# 13) |
 | 前端 | Vue 3 + Vite + TypeScript + Element Plus |
 | 数据库 | PostgreSQL 16 |
-| ORM | EF Core 8 + Npgsql |
+| ORM | EF Core 10 + Npgsql |
 | 认证 | JWT + ASP.NET Core Identity |
 | 校验 | FluentValidation |
 | 映射 | Mapster |
@@ -39,16 +39,16 @@ Api → Application → Domain ← Infrastructure
 
 ## 项目状态
 
-**M2 已完成** — 论文 CRUD、PDF 上传、全文搜索运行中。注册/登录/JWT + 论文上传/列表/详情/搜索/删除全覆盖，前端首页/详情/上传/编辑页完整可用。管理后台含分类管理 + 用户管理。M3（评分+评论）即将开始。
+**M6 已完成** — 支撑数据上传/管理、AI API 配置、LaTeX 论文生成全部可用。所有六个里程碑均已交付。
 
 | 里程碑 | 目标 | 状态 |
 |--------|------|------|
 | **M1** | 项目骨架、认证系统 | ✅ 完成 |
 | **M2** | 论文 CRUD、文件上传、搜索 | ✅ 完成 |
-| **M3** | 评分、评论系统 | 📋 待开发 |
-| **M4** | 分类管理、个人中心 | 📋 待开发 |
-| **M5** | 测试、优化、文档 | 📋 待开发 |
-| **M6** | 科研数据 + AI 论文生成 | 📋 待开发 |
+| **M3** | 评分、评论系统 | ✅ 完成 |
+| **M4** | 分类管理、个人中心、管理员 | ✅ 完成 |
+| **M5** | 测试、优化、文档 | ✅ 完成 |
+| **M6** | 科研数据 + AI 论文生成 | ✅ 完成 |
 
 ## 快速开始
 
@@ -139,10 +139,14 @@ docker compose down -v
 - **API 响应**: 统一 `{ code, message, data }` 格式
 - **C# 命名**: PascalCase 公开，`_camelCase` 私有字段，file-scoped namespace
 - **Vue 命名**: PascalCase 组件文件名，`<script setup lang="ts">` 独占
-- **软删除**: 论文和评论使用软删除 (`IsDeleted`)
-- **评分规则**: 每用户每论文仅一个评分，每次评分后事务内重算均分
-- **文件上传**: 仅 PDF，≤ 10MB
-- **认证**: 无状态 JWT，禁止 Cookie 认证
+- **软删除**: 论文和评论使用软删除 (`IsDeleted`)，评分物理删除
+- **评分规则**: 每用户每论文仅一个评分（唯一约束），每次评分后事务内重算均分
+- **评分分布**: `PaperDetailDto` 返回各星级数量及当前用户评分
+- **文件上传**: 论文 PDF ≤ 10MB，头像 ≤ 2MB，支撑数据 ≤ 20MB（支持图片/文档/表格/数据格式）
+- **AI API Key**: AES-256 加密存储于数据库，日志输出脱敏，不可逆取回明文
+- **认证**: 无状态 JWT + Refresh Token 轮换，禁止 Cookie 认证
+- **API 限流**: 登录 5/min，注册 3/min，上传 10/min，其余 100/min
+- **健康检查**: `GET /health`
 - **Git 提交**: `<type>(<scope>): <subject>`
 
 ## 许可证

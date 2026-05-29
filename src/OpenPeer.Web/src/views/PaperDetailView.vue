@@ -3,7 +3,12 @@
     <template v-if="paper">
       <h1>{{ paper.title }}</h1>
       <div class="meta">
-        <span>作者: {{ paper.author.userName }}</span>
+        <span
+          >作者:
+          <router-link :to="`/users/${paper.author.id}`" class="author-link">{{
+            paper.author.userName
+          }}</router-link></span
+        >
         <StarRating :model-value="paper.averageRating" size="large" show-text />
         <span>{{ paper.ratingCount }} 评分</span>
         <span>{{ paper.commentCount }} 评论</span>
@@ -62,7 +67,116 @@
       <p class="abstract">{{ paper.abstract }}</p>
 
       <h3>PDF 预览</h3>
-      <iframe v-if="paper.fileUrl" :src="paper.fileUrl" class="pdf-viewer" />
+      <PdfViewer v-if="paper.fileUrl" :src="paper.fileUrl" />
+
+      <h3>支撑数据</h3>
+      <div class="supporting-data-section">
+        <div v-if="isAuthor" class="upload-data">
+          <el-upload
+            :show-file-list="false"
+            :http-request="handleDataUpload"
+            accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.csv,.xlsx,.json,.zip"
+          >
+            <el-button size="small" type="primary">上传支撑数据</el-button>
+          </el-upload>
+          <el-input
+            v-model="dataDescription"
+            placeholder="文件说明（可选）"
+            size="small"
+            style="width: 300px; margin-left: 8px"
+          />
+        </div>
+        <div v-loading="dataLoading" class="data-list">
+          <div v-for="item in dataItems" :key="item.id" class="data-item">
+            <el-icon><Document /></el-icon>
+            <a :href="getDataFileUrl(item)" target="_blank" class="data-name">
+              {{ item.fileName }}
+            </a>
+            <span class="data-size">{{ formatFileSize(item.fileSize) }}</span>
+            <span class="data-desc" v-if="item.description">{{
+              item.description
+            }}</span>
+            <el-button
+              v-if="isAuthor"
+              type="danger"
+              link
+              size="small"
+              @click="handleDataDelete(item.id)"
+            >
+              删除
+            </el-button>
+          </div>
+          <AppEmpty
+            v-if="!dataItems.length && !dataLoading"
+            description="暂无支撑数据"
+          />
+        </div>
+      </div>
+
+      <div v-if="isAuthenticated" class="latex-generation">
+        <el-button type="success" @click="showLatexDialog = true">
+          使用 AI 生成 LaTeX 论文
+        </el-button>
+      </div>
+
+      <el-dialog
+        v-model="showLatexDialog"
+        title="AI 生成 LaTeX 论文"
+        width="600px"
+      >
+        <el-form label-width="80px">
+          <el-form-item label="论文标题" required>
+            <el-input v-model="latexTitle" placeholder="输入论文标题" />
+          </el-form-item>
+          <el-form-item label="生成提示" required>
+            <el-input
+              v-model="latexPrompt"
+              type="textarea"
+              :rows="4"
+              placeholder="描述你想生成的论文内容..."
+            />
+          </el-form-item>
+          <el-form-item label="选择数据">
+            <el-checkbox-group
+              v-model="selectedDataIds"
+              v-if="dataItems.length"
+            >
+              <el-checkbox
+                v-for="item in dataItems"
+                :key="item.id"
+                :value="item.id"
+              >
+                {{ item.fileName }}
+              </el-checkbox>
+            </el-checkbox-group>
+            <span v-else class="no-data-tip">请先上传支撑数据</span>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showLatexDialog = false">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="generating"
+            :disabled="!dataItems.length"
+            @click="handleGenerateLatex"
+          >
+            生成
+          </el-button>
+        </template>
+        <div v-if="generatedLatex" style="margin-top: 16px">
+          <h4>生成结果</h4>
+          <el-input
+            v-model="generatedLatex"
+            type="textarea"
+            :rows="15"
+            readonly
+            style="font-family: monospace; font-size: 13px"
+          />
+          <el-button size="small" style="margin-top: 8px" @click="copyLatex"
+            >复制 LaTeX</el-button
+          >
+        </div>
+      </el-dialog>
 
       <h3>评分</h3>
       <div class="rating-section">
@@ -95,6 +209,15 @@
         </div>
       </div>
 
+      <div class="rating-list" v-if="ratingItems.length">
+        <h3>最近评分</h3>
+        <div v-for="r in ratingItems" :key="r.id" class="rating-item">
+          <span class="rating-user">{{ r.user.userName }}</span>
+          <StarRating :model-value="r.score" />
+          <span class="rating-date">{{ formatDate(r.createdAt) }}</span>
+        </div>
+      </div>
+
       <CommentList
         :paper-id="paper.id"
         @comment-count-change="(count) => paper && (paper.commentCount = count)"
@@ -105,16 +228,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { papersApi } from "../api/papers";
 import { ratingsApi } from "../api/ratings";
+import { dataApi } from "../api/data";
+import { aiApi } from "../api/ai";
 import { ElMessage } from "element-plus";
+import { Document } from "@element-plus/icons-vue";
 import StarRating from "../components/common/StarRating.vue";
+import PdfViewer from "../components/common/PdfViewer.vue";
 import AppEmpty from "../components/common/AppEmpty.vue";
 import CommentList from "../components/comment/CommentList.vue";
 import type { PaperDetailDto } from "../types/paper";
+import type { RatingDto } from "../types/rating";
+import type { SupportingDataItem } from "../types/data";
 
 const route = useRoute();
 const router = useRouter();
@@ -124,6 +253,17 @@ const loading = ref(true);
 const showRetractDialog = ref(false);
 const retractReason = ref("");
 const userRating = ref(0);
+const ratingItems = ref<RatingDto[]>([]);
+
+const dataItems = ref<SupportingDataItem[]>([]);
+const dataLoading = ref(false);
+const dataDescription = ref("");
+const showLatexDialog = ref(false);
+const latexTitle = ref("");
+const latexPrompt = ref("");
+const selectedDataIds = ref<string[]>([]);
+const generating = ref(false);
+const generatedLatex = ref("");
 
 const isAuthenticated = computed(() => auth.isAuthenticated);
 const isAuthor = computed(() =>
@@ -186,6 +326,114 @@ async function handleRatingSubmit(score: number) {
   }
 }
 
+function getDataFileUrl(item: SupportingDataItem) {
+  const ext = item.fileName.includes(".")
+    ? item.fileName.substring(item.fileName.lastIndexOf("."))
+    : "";
+  return `/api/files/data/${item.id}${ext}`;
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function fetchData() {
+  if (!paper.value) return;
+  dataLoading.value = true;
+  try {
+    const { data } = await dataApi.getList(paper.value.id);
+    if (data.code === 200) {
+      dataItems.value = data.data;
+    }
+  } catch {
+    // ignore
+  } finally {
+    dataLoading.value = false;
+  }
+}
+
+async function handleDataUpload(upload: any) {
+  if (!paper.value) return;
+  try {
+    const { data } = await dataApi.upload(
+      paper.value.id,
+      upload.file,
+      dataDescription.value || undefined,
+    );
+    if (data.code === 201) {
+      ElMessage.success("支撑数据上传成功");
+      dataDescription.value = "";
+      await fetchData();
+    }
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "上传失败");
+  }
+}
+
+async function handleDataDelete(id: string) {
+  if (!paper.value) return;
+  try {
+    await dataApi.delete(paper.value.id, id);
+    ElMessage.success("已删除");
+    dataItems.value = dataItems.value.filter((d) => d.id !== id);
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "删除失败");
+  }
+}
+
+async function handleGenerateLatex() {
+  if (!latexTitle.value || !latexPrompt.value) {
+    ElMessage.warning("请填写标题和提示");
+    return;
+  }
+  generating.value = true;
+  try {
+    const { data } = await aiApi.generateLatex({
+      title: latexTitle.value,
+      dataIds: selectedDataIds.value,
+      prompt: latexPrompt.value,
+    });
+    if (data.code === 200) {
+      generatedLatex.value = data.data.latex;
+      ElMessage.success("LaTeX 论文生成成功");
+    }
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || "生成失败");
+  } finally {
+    generating.value = false;
+  }
+}
+
+function copyLatex() {
+  navigator.clipboard.writeText(generatedLatex.value);
+  ElMessage.success("已复制到剪贴板");
+}
+
+watch(
+  () => route.params.id,
+  () => {
+    paper.value = null;
+    dataItems.value = [];
+    generatedLatex.value = "";
+  },
+);
+
+async function fetchRatings() {
+  try {
+    const { data } = await ratingsApi.getList(route.params.id as string, {
+      page: 1,
+      pageSize: 10,
+    });
+    if (data.code === 200) {
+      ratingItems.value = data.data.items;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 onMounted(async () => {
   try {
     const { data } = await papersApi.getDetail(route.params.id as string);
@@ -193,6 +441,8 @@ onMounted(async () => {
       paper.value = data.data;
       userRating.value = data.data.currentUserRating || 0;
     }
+    await fetchRatings();
+    await fetchData();
   } catch (e: any) {
     ElMessage.error(e.response?.data?.message || "加载失败");
   } finally {
@@ -226,12 +476,6 @@ onMounted(async () => {
   margin: 12px 0;
   line-height: 1.8;
 }
-.pdf-viewer {
-  width: 100%;
-  height: 600px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
 .retracted-banner {
   margin-bottom: 20px;
 }
@@ -254,6 +498,30 @@ onMounted(async () => {
 .distribution {
   margin-top: 12px;
 }
+.rating-list {
+  margin-top: 24px;
+}
+.rating-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.author-link {
+  color: #409eff;
+  text-decoration: none;
+}
+.author-link:hover {
+  text-decoration: underline;
+}
+.rating-user {
+  font-weight: 500;
+  min-width: 80px;
+}
+.rating-date {
+  color: #999;
+  font-size: 12px;
+}
 .bars {
   max-width: 400px;
 }
@@ -266,5 +534,42 @@ onMounted(async () => {
 .count {
   min-width: 30px;
   color: #999;
+}
+.supporting-data-section {
+  margin: 12px 0;
+}
+.upload-data {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.data-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.data-name {
+  color: #409eff;
+  text-decoration: none;
+}
+.data-name:hover {
+  text-decoration: underline;
+}
+.data-size {
+  color: #999;
+  font-size: 12px;
+}
+.data-desc {
+  color: #666;
+  font-size: 13px;
+}
+.latex-generation {
+  margin: 16px 0;
+}
+.no-data-tip {
+  color: #999;
+  font-size: 13px;
 }
 </style>

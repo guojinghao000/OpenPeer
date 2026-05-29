@@ -34,6 +34,24 @@ public class CommentRepository : ICommentRepository
         return (items, total);
     }
 
+    public async Task<(List<Comment> Items, int Total)> GetPagedByUserIdAsync(Guid userId, int page, int pageSize)
+    {
+        var query = _context.Comments
+            .Where(c => c.UserId == userId && !c.IsDeleted)
+            .Include(c => c.Paper)
+            .OrderByDescending(c => c.CreatedAt)
+            .AsNoTracking();
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
     public async Task<Comment?> GetByIdAsync(Guid id)
     {
         return await _context.Comments

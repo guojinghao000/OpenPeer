@@ -32,3 +32,8 @@ pgdata/
 # OS
 .DS_Store
 Thumbs.db
+
+# Debug data dumps
+*.json
+!doc/**/*.json
+!src/**/*.json

@@ -8,13 +8,15 @@ public class LocalFileStorageService : IFileStorageService
 
     public LocalFileStorageService()
     {
-        _basePath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Papers");
+        _basePath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
         Directory.CreateDirectory(_basePath);
     }
 
-    public async Task<string> SaveFileAsync(Stream fileStream, string fileName)
+    public async Task<string> SaveFileAsync(Stream fileStream, string fileName, string subDirectory)
     {
-        var filePath = Path.Combine(_basePath, fileName);
+        var dir = Path.Combine(_basePath, subDirectory);
+        Directory.CreateDirectory(dir);
+        var filePath = Path.Combine(dir, fileName);
         await using var output = File.Create(filePath);
         await fileStream.CopyToAsync(output);
         return filePath;

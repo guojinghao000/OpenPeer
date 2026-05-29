@@ -57,6 +57,9 @@
 - Paper (1) ── (N) Comment: 一篇论文可有多条评论
 - Paper (N) ── (N) Category: 论文与分类多对多 (通过 PaperCategories)
 - Comment (1) ── (N) Comment: 评论自引用 (支持回复)
+- Paper (1) ── (N) SupportingData: 一篇论文可有多个支撑数据文件
+- User (1) ── (N) SupportingData: 一个用户可上传多个支撑数据文件
+- User (1) ── (1) UserAiConfig: 一个用户有一个 AI 配置 (一对一)
 
 ---
 

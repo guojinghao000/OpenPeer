@@ -38,6 +38,24 @@ public class RatingRepository : IRatingRepository
         return (items, total);
     }
 
+    public async Task<(List<Rating> Items, int Total)> GetPagedByUserIdAsync(Guid userId, int page, int pageSize)
+    {
+        var query = _context.Ratings
+            .Where(r => r.UserId == userId)
+            .Include(r => r.Paper)
+            .OrderByDescending(r => r.CreatedAt)
+            .AsNoTracking();
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
     public async Task<List<Rating>> GetAllByPaperIdAsync(Guid paperId)
     {
         return await _context.Ratings

@@ -25,3 +25,20 @@ export interface UserDto {
   commentCount: number;
   createdAt: string;
 }
+
+export interface UserRatingItem {
+  id: string;
+  paperId: string;
+  paperTitle: string;
+  score: number;
+  createdAt: string;
+}
+
+export interface UserCommentItem {
+  id: string;
+  paperId: string;
+  paperTitle: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string | null;
+}

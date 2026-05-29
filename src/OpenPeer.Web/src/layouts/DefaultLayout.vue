@@ -6,12 +6,18 @@
         <nav>
           <template v-if="auth.isAuthenticated">
             <router-link to="/upload">上传论文</router-link>
+            <router-link to="/profile/ai-config">AI 生成</router-link>
             <router-link
               v-if="auth.user?.role === 'Admin'"
               to="/admin/categories"
               >管理后台</router-link
             >
-            <router-link to="/profile">{{ auth.user?.userName }}</router-link>
+            <router-link to="/profile" class="user-link">
+              <el-avatar :size="28" :src="userAvatarUrl" shape="circle">
+                {{ auth.user?.userName?.[0] }}
+              </el-avatar>
+              {{ auth.user?.userName }}
+            </router-link>
             <a @click="handleLogout">退出</a>
           </template>
           <template v-else>
@@ -24,14 +30,28 @@
     <main>
       <router-view />
     </main>
+    <AppFooter />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useAuthStore } from "../stores/auth";
 import { useRouter } from "vue-router";
+import AppFooter from "../components/common/AppFooter.vue";
 
 const auth = useAuthStore();
+
+function getFileExtension(fileName: string) {
+  const i = fileName.lastIndexOf(".");
+  return i >= 0 ? fileName.slice(i) : "";
+}
+
+const userAvatarUrl = computed(() => {
+  if (!auth.user?.avatarPath) return "";
+  const ext = getFileExtension(auth.user.avatarPath);
+  return `/api/files/avatars/${auth.user.id}${ext}`;
+});
 const router = useRouter();
 
 async function handleLogout() {
@@ -72,6 +92,11 @@ nav a {
 }
 nav a:hover {
   color: #409eff;
+}
+.user-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 main {
   max-width: 1200px;

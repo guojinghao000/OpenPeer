@@ -2,7 +2,7 @@
 
 ## Project status
 
-**M3 completed — rating + comment system.** M2 (paper CRUD, file upload, full-text search) already done. Registration/login/JWT + paper upload/list/detail/search/delete + **rating CRUD** (POST/GET/DELETE `/api/papers/{id}/ratings`) + **comment CRUD** (GET/POST `/api/papers/{id}/comments`, PUT/DELETE `/api/comments/{id}`) all working. Average score auto-recalculated in transaction after every rating write. Frontend: interactive StarRating component with v-model, inline comment/reply system. Next milestone (M4): profile polish, admin panel, sorting/filtering refinement.
+**M6 completed — supporting data upload/management, AI LaTeX generation.** M4 (categories CRUD, profile center, admin panel, avatar upload) and M3 (rating + comment system) finished earlier. Registration/login/JWT + paper upload/list/detail/search/delete + rating + comment all working. M6 adds: `SupportingData` entity/table, multi-file upload (≤20MB per file, images/docs/csv/json/zip), `UserAiConfig` entity/table with AES-256 encrypted API key storage, AI config API (GET/PUT `/api/users/me/ai-config`), LaTeX generation via `POST /api/papers/generate` (calls OpenAI/DeepSeek/Anthropic compatible APIs), `AiConfigView` frontend page, supporting data section in `PaperDetailView`. Rate limiting, response compression, health checks, EF Core retry configured. Unit tests for `RatingService` (5 tests running via `dotnet test`).
 
 ## Project identity
 
@@ -15,7 +15,7 @@ OpenPeer is a reader-evaluation-driven academic paper platform. Authors publish 
 | Backend | ASP.NET Core 10 Web API (C# 13) |
 | Frontend | Vue 3 + Vite + TypeScript |
 | Database | PostgreSQL 16 |
-| ORM | EF Core 8 + Npgsql |
+| ORM | EF Core 10 + Npgsql |
 | Auth | JWT + ASP.NET Core Identity |
 | Validation | FluentValidation |
 | UI | Element Plus |
@@ -39,26 +39,24 @@ Api → Application → Domain ← Infrastructure
 ## Key commands
 
 ```bash
-# Backend (run from solution root or Api project)
+# Backend (run from Api project)
 dotnet restore
 dotnet build
-dotnet test
+dotnet test                        # runs src/OpenPeer.Tests
 dotnet ef migrations add <Name> --project src/OpenPeer.Infrastructure --startup-project src/OpenPeer.Api
 dotnet ef database update    --project src/OpenPeer.Infrastructure --startup-project src/OpenPeer.Api
 
 # Frontend (run from src/OpenPeer.Web)
 npm install
-npm run dev         # Vite dev server
+npm run dev         # Vite dev server (port 5173)
 npm run build       # production build
-npm run typecheck   # if configured
-npm run test        # Vitest
 
 # Docker (root)
 docker compose up -d --build   # start all services (db, api, web)
 docker compose down -v         # teardown with volumes
 ```
 
-Service ports: API `:5000`, Web `:80`, DB `:5432` (local dev) / `:5433` (Docker), API docs `http://localhost:5000/scalar/v1`.
+Service ports: API `:5000`, Web `:80`, DB `:5432` (local dev) / `:5433` (Docker), API docs `http://localhost:5000/scalar/v1`, Health `http://localhost:5000/health`.
 
 ## Important conventions
 
@@ -66,9 +64,13 @@ Service ports: API `:5000`, Web `:80`, DB `:5432` (local dev) / `:5433` (Docker)
 - **C# naming**: PascalCase public, `_camelCase` private fields, camelCase locals/params
 - **Vue naming**: PascalCase filenames for components, Composition API only, `<script setup lang="ts">`
 - **Primary keys**: UUID (not auto-increment ints) — uses PostgreSQL `gen_random_uuid()`
-- **Soft deletes**: papers and comments use soft-delete (`IsDeleted` flag), not physical delete
-- **Rating**: one rating per user per paper (unique constraint), score recalculation in transaction after every write
-- **File uploads**: PDF only, max 10 MB, stored locally (`Uploads/`) via `IFileStorageService`
+- **Soft deletes**: papers and comments use soft-delete (`IsDeleted` flag), ratings are physically deleted
+- **Rating**: one rating per user per paper (unique constraint), score recalculation in transaction after every write. `CreateRatingRequest` has a single `score` field (1–5)
+- **Avatar upload**: `POST /api/users/me/avatar` (multipart), stored at `Uploads/Avatars/{userId}.ext`, served at `GET /api/files/avatars/{fileName}`
+- **User role**: stored in `User.Role` enum column, NOT in Identity's `AspNetUserRoles` table. `UserService.UpdateUserRoleAsync` updates `User.Role` directly via `_userManager.UpdateAsync()` — do NOT use `AddToRoleAsync`/`RemoveFromRolesAsync`
+- **Rate limiting**: Login (5/min), Register (3/min), Upload (10/min), Default (100/min) via `[EnableRateLimiting("...")]`
+- **File uploads**: paper PDF ≤ 10 MB via `IFileStorageService` (stored at `Uploads/Papers/`); avatar images ≤ 2 MB (stored at `Uploads/Avatars/`)
+- **nginx**: `client_max_body_size 25M` in the `/api/` location block is required. API controllers use `[DisableRequestSizeLimit]` — all upload size enforcement happens at nginx level, not in ASP.NET Core
 - **Git commits**: format `<type>(<scope>): <subject>` — types: feat, fix, docs, refactor, test, chore
 
 ## Repository structure
@@ -79,7 +81,8 @@ Service ports: API `:5000`, Web `:80`, DB `:5432` (local dev) / `:5433` (Docker)
 │   ├── OpenPeer.Application/
 │   ├── OpenPeer.Domain/
 │   ├── OpenPeer.Infrastructure/
-│   └── OpenPeer.Web/           # Vue 3 frontend
+│   ├── OpenPeer.Tests/          # xUnit unit tests (Moq + FluentAssertions)
+│   └── OpenPeer.Web/            # Vue 3 frontend
 ├── docker-compose.yml
 └── AGENTS.md
 ```
@@ -101,3 +104,7 @@ Every development session must end with a documentation review:
 - Don't use cookie auth — this is a stateless JWT API
 - Don't make `ReputationScore` a required feature — it's a P2 reserved field, may not be implemented yet
 - Don't install Vue 2 plugins or Options API code — Vue 3 + Composition API strictly
+- Don't use Identity role APIs (`GetRolesAsync`/`AddToRoleAsync`) — the app stores roles in `User.Role` column directly
+- Don't rely on `Login` response's `user.paperCount` — it reflects the value at registration time; use `GET /api/users/me` for accurate counts
+- Don't call `fetchPapers()`/`fetchRatings()`/`fetchComments()` on ProfileView mount — use lazy loading via `watch(activeTab)` with `loadedTabs` dedup set
+- Don't enable `AddRoles<IdentityRole>()` — this project uses `User.Role` column, not the Identity roles table

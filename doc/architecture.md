@@ -98,6 +98,7 @@ src/
 │   │   ├── RatingsController.cs
 │   │   ├── CommentsController.cs
 │   │   ├── CategoriesController.cs
+│   │   ├── DataController.cs
 │   │   └── UsersController.cs
 │   ├── Middleware/
 │   │   ├── ExceptionMiddleware.cs
@@ -119,7 +120,8 @@ src/
 │   │   ├── RatingService.cs
 │   │   ├── CommentService.cs
 │   │   ├── UserService.cs
-│   │   ├── DataService.cs
+│   │   ├── SupportingDataService.cs
+│   │   ├── AiConfigService.cs
 │   │   └── AiPaperService.cs
 │   ├── DTOs/
 │   │   ├── Auth/
@@ -135,6 +137,12 @@ src/
 │   │   ├── Comments/
 │   │   │   ├── CreateCommentRequest.cs
 │   │   │   └── CommentDto.cs
+│   │   ├── SupportingData/
+│   │   │   └── SupportingDataDto.cs
+│   │   ├── AiConfig/
+│   │   │   ├── AiConfigDto.cs
+│   │   │   ├── UpdateAiConfigRequest.cs
+│   │   │   └── GenerateLatexRequest.cs
 │   │   └── Common/
 │   │       ├── PagedRequest.cs
 │   │       ├── PagedResponse.cs
@@ -150,7 +158,12 @@ src/
 │   │   ├── IUserRepository.cs
 │   │   ├── ICategoryRepository.cs
 │   │   ├── IFileStorageService.cs
-│   │   ├── IDataService.cs
+│   │   ├── IEncryptionService.cs
+│   │   ├── ISupportingDataService.cs
+│   │   ├── ISupportingDataRepository.cs
+│   │   ├── IAiConfigService.cs
+│   │   ├── IAiConfigRepository.cs
+│   │   ├── IAiApiClient.cs
 │   │   └── IAiPaperService.cs
 │   └── Mappings/
 │       └── MapsterConfig.cs
@@ -188,7 +201,9 @@ src/
     │   ├── RatingRepository.cs
     │   ├── CommentRepository.cs
     │   ├── UserRepository.cs
-    │   └── CategoryRepository.cs
+    │   ├── CategoryRepository.cs
+    │   ├── SupportingDataRepository.cs
+    │   └── AiConfigRepository.cs
     ├── Auth/
     │   ├── JwtService.cs
     │   └── JwtOptions.cs

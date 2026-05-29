@@ -1,7 +1,9 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenPeer.Api.Extensions;
@@ -64,6 +66,43 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddFluentValidationAutoValidation()
     .AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+
+    options.AddFixedWindowLimiter("Login", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+
+    options.AddFixedWindowLimiter("Register", opt =>
+    {
+        opt.PermitLimit = 3;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+
+    options.AddFixedWindowLimiter("Upload", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+
+    options.AddFixedWindowLimiter("Default", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+});
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>();
+
 MapsterConfig.Configure();
 
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -87,9 +126,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseOpenPeerMiddleware();
 app.UseSerilogRequestLogging();
+app.UseResponseCompression();
 app.UseCors("AllowWeb");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

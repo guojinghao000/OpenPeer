@@ -17,7 +17,7 @@ namespace OpenPeer.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -348,6 +348,55 @@ namespace OpenPeer.Infrastructure.Migrations
                     b.ToTable("Ratings");
                 });
 
+            modelBuilder.Entity("OpenPeer.Domain.Entities.SupportingData", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("PaperId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaperId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SupportingData");
+                });
+
             modelBuilder.Entity("OpenPeer.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -435,6 +484,38 @@ namespace OpenPeer.Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("OpenPeer.Domain.Entities.UserAiConfig", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ApiKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("UserAiConfigs");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -563,6 +644,36 @@ namespace OpenPeer.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("OpenPeer.Domain.Entities.SupportingData", b =>
+                {
+                    b.HasOne("OpenPeer.Domain.Entities.Paper", "Paper")
+                        .WithMany("SupportingData")
+                        .HasForeignKey("PaperId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OpenPeer.Domain.Entities.User", "User")
+                        .WithMany("SupportingData")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Paper");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OpenPeer.Domain.Entities.UserAiConfig", b =>
+                {
+                    b.HasOne("OpenPeer.Domain.Entities.User", "User")
+                        .WithOne("AiConfig")
+                        .HasForeignKey("OpenPeer.Domain.Entities.UserAiConfig", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("OpenPeer.Domain.Entities.Category", b =>
                 {
                     b.Navigation("PaperCategories");
@@ -580,15 +691,21 @@ namespace OpenPeer.Infrastructure.Migrations
                     b.Navigation("PaperCategories");
 
                     b.Navigation("Ratings");
+
+                    b.Navigation("SupportingData");
                 });
 
             modelBuilder.Entity("OpenPeer.Domain.Entities.User", b =>
                 {
+                    b.Navigation("AiConfig");
+
                     b.Navigation("Comments");
 
                     b.Navigation("Papers");
 
                     b.Navigation("Ratings");
+
+                    b.Navigation("SupportingData");
                 });
 #pragma warning restore 612, 618
         }

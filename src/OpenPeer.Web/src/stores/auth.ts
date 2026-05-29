@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { authApi } from "../api/auth";
+import client from "../api/client";
 
 export interface User {
   id: string;
@@ -27,6 +28,7 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = data.data.user;
       localStorage.setItem("accessToken", data.data.accessToken);
       localStorage.setItem("refreshToken", data.data.refreshToken);
+      localStorage.setItem("user", JSON.stringify(data.data.user));
     }
   }
 
@@ -45,6 +47,32 @@ export const useAuthStore = defineStore("auth", () => {
     return data;
   }
 
+  async function initialize() {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    accessToken.value = token;
+    refreshToken.value = localStorage.getItem("refreshToken");
+
+    const cached = localStorage.getItem("user");
+    if (cached) {
+      try {
+        user.value = JSON.parse(cached);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    try {
+      const { data } = await client.get("/users/me");
+      if (data.code === 200) {
+        user.value = data.data;
+        localStorage.setItem("user", JSON.stringify(data.data));
+      }
+    } catch {
+      await logout();
+    }
+  }
+
   async function logout() {
     if (refreshToken.value) {
       await authApi.logout(refreshToken.value).catch(() => {});
@@ -54,6 +82,7 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
   }
 
   return {
@@ -63,6 +92,7 @@ export const useAuthStore = defineStore("auth", () => {
     isAuthenticated,
     login,
     register,
+    initialize,
     logout,
   };
 });

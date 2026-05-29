@@ -22,4 +22,5 @@ public class Paper
     public ICollection<Rating> Ratings { get; set; } = [];
     public ICollection<Comment> Comments { get; set; } = [];
     public ICollection<PaperCategory> PaperCategories { get; set; } = [];
+    public ICollection<SupportingData> SupportingData { get; set; } = [];
 }

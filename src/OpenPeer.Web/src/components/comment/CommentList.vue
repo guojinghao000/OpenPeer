@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { commentsApi } from "../../api/comments";
 import { useAuthStore } from "../../stores/auth";
 import { ElMessage } from "element-plus";
@@ -137,6 +137,14 @@ async function handleUpdate(id: string, content: string) {
 }
 
 onMounted(fetchComments);
+
+watch(
+  () => props.paperId,
+  () => {
+    page.value = 1;
+    fetchComments();
+  },
+);
 </script>
 
 <style scoped>

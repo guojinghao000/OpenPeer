@@ -15,4 +15,6 @@ public class User : IdentityUser<Guid>
     public ICollection<Paper> Papers { get; set; } = [];
     public ICollection<Rating> Ratings { get; set; } = [];
     public ICollection<Comment> Comments { get; set; } = [];
+    public ICollection<SupportingData> SupportingData { get; set; } = [];
+    public UserAiConfig? AiConfig { get; set; }
 }

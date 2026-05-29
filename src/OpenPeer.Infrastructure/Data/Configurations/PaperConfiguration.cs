@@ -40,5 +40,10 @@ public class PaperConfiguration : IEntityTypeConfiguration<Paper>
         builder.HasMany(p => p.PaperCategories)
             .WithOne(pc => pc.Paper)
             .HasForeignKey(pc => pc.PaperId);
+
+        builder.HasMany(p => p.SupportingData)
+            .WithOne(sd => sd.Paper)
+            .HasForeignKey(sd => sd.PaperId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

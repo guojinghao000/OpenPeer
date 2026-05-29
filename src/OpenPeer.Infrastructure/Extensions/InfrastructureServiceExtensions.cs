@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenPeer.Application.Interfaces;
 using OpenPeer.Application.Services;
 using OpenPeer.Domain.Entities;
+using OpenPeer.Infrastructure.AI;
 using OpenPeer.Infrastructure.Auth;
 using OpenPeer.Infrastructure.Data;
 using OpenPeer.Infrastructure.Repositories;
@@ -17,7 +18,8 @@ public static class InfrastructureServiceExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("Default")));
+            options.UseNpgsql(configuration.GetConnectionString("Default"),
+                npgsql => npgsql.EnableRetryOnFailure(3)));
 
         services.AddIdentityCore<User>(options =>
             {
@@ -43,6 +45,14 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICommentService, CommentService>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+
+        services.AddScoped<ISupportingDataRepository, SupportingDataRepository>();
+        services.AddScoped<IAiConfigRepository, AiConfigRepository>();
+        services.AddScoped<ISupportingDataService, SupportingDataService>();
+        services.AddScoped<IAiConfigService, AiConfigService>();
+        services.AddScoped<IAiPaperService, AiPaperService>();
+        services.AddSingleton<IEncryptionService, AesEncryptionService>();
+        services.AddHttpClient<IAiApiClient, AiApiClient>();
 
         return services;
     }
